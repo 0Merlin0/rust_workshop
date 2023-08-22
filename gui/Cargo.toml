@@ -1,0 +1,11 @@
+[package]
+name = "gui"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+eframe = "0.21.3"
+egui = "0.21.0"
+tracing-subscriber = "0.3.17"
