@@ -269,6 +269,57 @@ let reference = &mut string;
 let name: &str = "Harald";
 print_slice(&name[1..4]);
 
+// ---- Traits
+
+// Defining trait
+trait Addressable {
+    fn get(&self, x: usize, y: usize) -> bool;
+    fn set(&mut self, x:usize, y: usize, value: bool);
+    fn print_at(&self, x:usize, y:usize) {
+        println!("{}", self.get(x, y));
+    }
+}
+
+// Implementing trait for type
+impl Addressable for Grid {
+    fn get (&self, x: usize, y: usize) -> bool {
+        self.state[x][y]
+    }
+    fn set (&mut self, x: usize, y: usize, value: bool) {
+        self.state[x][y] = value;
+    }
+}
+
+// ---- Tests
+
+// define test
+#[test]
+fn test_function() {
+}
+
+// Use assert macros to test conditions
+fn test_function() {
+    let a = 10;
+    assert_eq!(a, 10);
+    assert!(true);
+}
+
+// ---- Deriving traits
+
+// Derive a trait
+#[derive(Copy)]
+enum State {
+    Alive,
+    Dead,
+}
+
+// Derive multiple trait
+#[derive(Clone, Copy, PartialEq)]
+enum State {
+    Alive,
+    Dead,
+}
+
 
 // ---- Vectors
 
@@ -287,19 +338,6 @@ println!("{}", primes[2]);
 // Get size of vector using len
 println!("{}", primes.len());
 
-// ---- Tests
-
-// define test
-#[test]
-fn test_function() {
-}
-
-// Use assert macros to test conditions
-fn test_function() {
-    let a = 10;
-    assert_eq!(a, 10);
-    assert!(true);
-}
 
 // ---- Enums
 
@@ -327,23 +365,3 @@ match s {
     State::Unknown{ details: b } => println!("{b}"),
 }
 
-// ---- Traits
-
-// Defining trait
-trait Addressable {
-    fn get(&self, x: usize, y: usize) -> bool;
-    fn set(&mut self, x:usize, y: usize, value: bool);
-    fn print_at(&self, x:usize, y:usize) {
-        println!("{}", self.get(x, y));
-    }
-}
-
-// Implementing trait for type
-impl Addressable for Grid {
-    fn get (&self, x: usize, y: usize) -> bool {
-        self.state[x][y]
-    }
-    fn set (&mut self, x: usize, y: usize, value: bool) {
-        self.state[x][y] = value;
-    }
-}

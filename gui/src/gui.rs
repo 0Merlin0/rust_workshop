@@ -1,5 +1,5 @@
 use crate::{grid, GuiController};
-use crate::simple_display::Board;
+use crate::board::Board;
 use eframe::egui;
 use std::sync::mpsc;
 use std::thread;
@@ -11,12 +11,13 @@ enum PlayState {
 }
 
 pub enum DisplayRequest {
-    Display(Board),
+    Text(String),
+    DisplayClickable(Board),
+    DisplayOnce(Board),
     Full(Board),
 }
 
 pub enum DisplayResult {
-    Display(bool),
     Full(Board),
 }
 
@@ -33,11 +34,9 @@ impl MyApp {
     fn new(
         sender: mpsc::Sender<DisplayResult>,
         receiver: mpsc::Receiver<DisplayRequest>,
-        width: usize,
-        height: usize,
     ) -> Self {
         Self {
-            state: DisplayRequest::Display(Board::new(width, height)),
+            state: DisplayRequest::Text("".to_string()),
             playing: PlayState::Paused,
             speed: 1,
             sender,
@@ -76,7 +75,7 @@ where
     let res = eframe::run_native(
         "Game of Life",
         options,
-        Box::new(|_cc| Box::<MyApp>::new(MyApp::new(gui_send, gui_receive, 10, 10))),
+        Box::new(|_cc| Box::<MyApp>::new(MyApp::new(gui_send, gui_receive))),
     );
     thread_join_handle.join().unwrap();
     res
@@ -117,7 +116,10 @@ impl eframe::App for MyApp {
                     ui.add(grid::grid(board, true));
                     if needs_update {
                         //let board = std::mem::take(&mut self.board);
-                        self.sender.send(DisplayResult::Full(board.clone())).unwrap();
+                        self.sender.send(DisplayResult::Full(board.clone())).unwrap_or_else(|_| {
+                            eprintln!("Logic code has exitted before GUI");
+                            std::process::exit(1);
+                        });
                         self.playing = match self.playing {
                             PlayState::Playing(_) => PlayState::Playing(Instant::now()),
                             PlayState::Paused => PlayState::Paused,
@@ -126,10 +128,52 @@ impl eframe::App for MyApp {
                     ctx.request_repaint_after(play_duration / 4);
 
                 },
-                DisplayRequest::Display(board) => {
+                DisplayRequest::DisplayClickable(board) => {
+                    ui.heading("Game of Life");
+                    let elapsed_duration = match self.playing {
+                        PlayState::Paused => Duration::from_millis(0),
+                        PlayState::Playing(last) => last.elapsed(),
+                    };
+
+                    ui.add(egui::Slider::new(&mut self.speed, 1..=100).text("speed"));
+
+                    let play_duration = Duration::from_millis(2500 / self.speed);
+
+                    let needs_update = ui.button("Step").clicked() || elapsed_duration >= play_duration;
+                    let play_button = match self.playing {
+                        PlayState::Paused => ui.button("Play"),
+                        PlayState::Playing(_) => ui.button("Pause"),
+                    };
+                    if play_button.clicked() {
+                        self.playing = match self.playing {
+                            PlayState::Paused => PlayState::Playing(Instant::now()),
+                            PlayState::Playing(_) => PlayState::Paused,
+                        };
+                    }
+                    ui.add(grid::grid(board, true));
+                    if needs_update {
+                        //let board = std::mem::take(&mut self.board);
+                        self.sender.send(DisplayResult::Full(board.clone())).unwrap_or_else(|_| { 
+                            eprintln!("Logic code has exitted before GUI");
+                            std::process::exit(1);
+                        });
+                        self.playing = match self.playing {
+                            PlayState::Playing(_) => PlayState::Playing(Instant::now()),
+                            PlayState::Paused => PlayState::Paused,
+                        }
+                    }
+                    ctx.request_repaint_after(play_duration / 4);
+                },
+                DisplayRequest::DisplayOnce(board) => {
                     ui.add(grid::grid(board, false));
-                    if ui.button("Continue").clicked() {
-                        self.sender.send(DisplayResult::Display(true)).unwrap();
+                    if ui.button("Exit").clicked() {
+                        std::process::exit(0);
+                    }
+                },
+                DisplayRequest::Text(s) => {
+                    ui.heading(s);
+                    if ui.button("Exit").clicked() {
+                        std::process::exit(0);
                     }
                 }
             }

@@ -1068,13 +1068,6 @@ name = "hello_basics"
 version = "0.1.0"
 
 [[package]]
-name = "hello_cellular"
-version = "0.1.0"
-dependencies = [
- "gui",
-]
-
-[[package]]
 name = "hello_life"
 version = "0.1.0"
 dependencies = [
@@ -2670,6 +2663,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d09770118a7eb1ccaf4a594a221334119a44a814fcb0d31c5b85e83e97227a97"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "wire_world"
+version = "0.1.0"
+dependencies = [
+ "gui",
 ]
 
 [[package]]

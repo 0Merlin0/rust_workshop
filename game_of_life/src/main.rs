@@ -1,29 +1,46 @@
 use gui::{GuiController, Grid, Resizable};
 
+#[derive(Clone)]
+struct Row {
+    columns: Vec<bool>,
+}
+
+impl Row {
+    fn new() -> Self {
+        Self { columns: Vec::new() }
+    }
+
+    fn from(slice: &[bool]) -> Self {
+        Self { columns: Vec::from(slice) }
+    }
+}
+
 struct LifeGeneration {
-    state: Vec<Vec<bool>>,
+    state: Vec<Row>,
     width: usize,
     height: usize,
 }
 
 impl LifeGeneration {
-    fn new(slice: &[&[bool]]) -> Self {
-        let mut state: Vec<Vec<bool>> = Vec::new();
+    fn from(slice: &[&[bool]]) -> Self {
+        let mut state: Vec<Row> = Vec::new();
         let height = slice.len();
         let mut width = 0;
         for row in slice {
-            state.push(Vec::from(*row));
+            state.push(Row::from(row));
             width = if width > row.len() {
                 width
             } else {
                 row.len()
             }
         }
-        LifeGeneration {
+        let mut instance = LifeGeneration {
             state,
             width,
             height
-        }
+        };
+        instance.resize(width, height);
+        instance
     }
 
     // Wraps around edges
@@ -37,47 +54,53 @@ impl LifeGeneration {
         self.get(x as usize, y as usize)
     }
 
+    fn current_at_u32(&self, x: isize, y: isize) -> u32 {
+        self.current_at(x, y) as u32
+    }
+
     fn next_at(&self, x: usize, y: usize) -> bool {
         let x = x as isize;
         let y = y as isize;
         let live_neighbours =
-            self.current_at(x-1, y-1) as u32 +
-            self.current_at(x-1, y) as u32+
-            self.current_at(x-1, y+1) as u32+
-            self.current_at(x, y-1) as u32+
-            self.current_at(x, y+1) as u32+
-            self.current_at(x+1, y-1) as u32+
-            self.current_at(x+1, y) as u32+
-            self.current_at(x+1, y+1) as u32;
+            self.current_at_u32(x - 1, y - 1) +
+            self.current_at_u32(x - 1, y    ) +
+            self.current_at_u32(x - 1, y + 1) +
+
+            self.current_at_u32(x    , y - 1) +
+            self.current_at_u32(x    , y + 1) +
+
+            self.current_at_u32(x + 1, y - 1) +
+            self.current_at_u32(x + 1, y    ) +
+            self.current_at_u32(x + 1, y + 1);
 
         live_neighbours == 3 || (live_neighbours == 2 && self.current_at(x, y))
     }
 
-    fn next_iteration(&self) -> LifeGeneration {
-        let mut state: Vec<Vec<bool>> = Vec::new();
+    fn next_generation(&mut self) {
+        let mut state: Vec<Row> = Vec::new();
         let height = self.height;
         let width = self.width;
 
         for y in 0..height {
-            state.push(Vec::new());
+            state.push(Row::new());
             for x in 0..width {
-                state[y].push(self.next_at(x, y));
+                state[y].columns.push(self.next_at(x, y));
             }
         }
-        Self { state, width, height }
+        *self = Self { state, width, height };
     }
 }
 
 impl Grid for LifeGeneration {
     fn get(&self, x: usize, y: usize) -> bool {
         match &self.state.get(y) {
-            Some(v) => *v.get(x).unwrap_or(&false),
+            Some(v) => *v.columns.get(x).unwrap_or(&false),
             None => false,
         }
     }
     fn set(&mut self, x: usize, y: usize, value: bool) {
-        if y < self.height && x < self.state[y].len() {
-                self.state[y][x] = value;
+        if y < self.height && x < self.state[y].columns.len() {
+                self.state[y].columns[x] = value;
         }
     }
     fn get_height(&self) -> usize {
@@ -92,24 +115,24 @@ impl Resizable for LifeGeneration {
     fn resize(&mut self, width: usize, height: usize) {
         self.width = width;
         self.height = height;
-        self.state.resize(height, vec![false; width]);
+        self.state.resize(height, Row::from(&vec![false; width]));
         for v in &mut self.state {
-            v.resize(width, false);
+            v.columns.resize(width, false);
         }
     }
 }
 
 
-fn workshop_main(mut gui: GuiController) {
-    let mut state = LifeGeneration::new(&[&[false;10],
+fn workshop_main(gui: GuiController) {
+    let mut state = LifeGeneration::from(&[&[false;10],
                       &[false, false, true],
                       &[true, false, true],
                       &[false, true, true],
                       &[],
                       &[],
                       &[]]);
-    while gui.show_interactive_grid(&mut state) {
-        state = state.next_iteration();
+    while gui.show_resizable_grid(&mut state) {
+        state.next_generation();
     }
 }
 

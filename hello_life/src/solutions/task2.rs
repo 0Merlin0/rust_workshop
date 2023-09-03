@@ -1,68 +1,26 @@
-use gui::{Grid, GuiController};
+#[allow(unused_imports)]
+use gui::{Grid, Resizable, GuiController};
 
-// Task 2: Implement the Grid trait. It is defined as:
-//
-//          trait Grid {
-//              fn get(&self, x: usize, y: usize) -> bool;
-//              fn set(&mut self, x: usize, y: usize, value: bool);
-//              fn get_height(&self) -> usize;
-//              fn get_width(&self) -> usize;
-//          }
+// Task 2: Create an associated function called "new", that creates an instance of the
+//         struct with all false values and an associated function "from" that takes a
+//         nested array of bools and returns an instance of the struct
 
-struct LifeGeneration {
-    state: Vec<Vec<bool>>,
-    width: usize,
-    height: usize,
+struct Board {
+    state: [[bool; 3]; 3],
 }
 
-impl LifeGeneration {
-    fn new(slice: &[&[bool]]) -> Self {
-        let mut state: Vec<Vec<bool>> = Vec::new();
-        let height = slice.len();
-        let mut width = 0;
-        for row in slice {
-            state.push(Vec::from(*row));
-            width = if width > row.len() {
-                width
-            } else {
-                row.len()
-            }
-        }
-        LifeGeneration {
-            state,
-            width,
-            height
-        }
+impl Board {
+    fn new() -> Self {
+        Self { state: [[false; 3]; 3] }
+    }
+
+    fn from(state: [[bool; 3]; 3]) -> Self {
+        Self { state }
     }
 }
 
-impl Grid for LifeGeneration {
-    fn get(&self, x: usize, y: usize) -> bool {
-        match &self.state.get(y) {
-            Some(v) => *v.get(x).unwrap_or(&false),
-            None => false,
-        }
-    }
-    fn set(&mut self, x: usize, y: usize, value: bool) {
-        if y < self.height && x < self.state[y].len() {
-                self.state[y][x] = value;
-        }
-    }
-    fn get_height(&self) -> usize {
-        self.height
-    }
-    fn get_width(&self) -> usize {
-        self.width
-    }
-}
-
-fn workshop_main(mut gui: GuiController) {
-    let state = LifeGeneration::new(&[&[true, false, true],
-                      &[true, false, true],
-                      &[true, false, true]]);
-    while gui.show_grid(&state) {
-        // This is where we would advance our generation
-    }
+fn workshop_main(gui: GuiController) {
+    gui.print("Hello World!");
 }
 
 fn main() {

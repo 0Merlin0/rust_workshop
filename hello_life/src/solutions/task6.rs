@@ -1,27 +1,14 @@
 #[allow(unused_imports)]
 use gui::{Grid, Resizable, GuiController};
 
-// Task 5: The get method is defined by the trait to take two usize parameters and
-//         return a bool.
-//         It can be beneficial for the rule calculation to have an additional method
-//         that takes signed x and y and an integer return type.
-//
-//         Implement a current_at method that takes two values x and y of type isize
-//         and return the current state of the cell at the given position in the grid as
-//         either 1 or 0, instead of true or false.
-//
-//         Implement a next_at method that takes two values x and y of type isize and
-//         returns a bool based on whether the cell will be live or dead in the next
-//         generation, according to the rules of the Game of Life.
-//         This function should use current_at to get values of the neighboorhood.
+// Task 6: Implement a method next_generation that takes a mutable self reference and
+//         advances it to the next generation according to the game of life rules.
+//         Then loop as long as show_grid returns true and call your method in
+//         the loop body.
 //
 //         Hints:
-//         * Remember anything outside the grid should return 0.
-//         * When indexing arrays we need to use a usize typed value. We can cast the
-//           isize values to usize using "as" once we have checked that they are not
-//           negative.
-//         * Casting bool to an integer type (e.g. u32) will yield 1 for true and 0
-//           for false.
+//         * Since each new cell state depends on the current state of several cells,
+//           you cannot do this in place, but need to create a new array.
 
 struct Board {
     state: [[bool; 3]; 3],
@@ -58,6 +45,16 @@ impl Board {
             + self.current_at(x + 1, y + 1);
         live_neighbors == 3 || (live_neighbors == 2 && self.get(x as usize, y as usize))
     }
+
+    fn next_generation(&mut self) {
+        let mut new_state = Self::new();
+        for y in 0..self.state.len() {
+            for x in 0..self.state[y].len() {
+                new_state.set(x, y, self.next_at(x as isize, y as isize));
+            }
+        }
+        *self = new_state;
+    }
 }
 
 impl Grid for Board {
@@ -87,6 +84,7 @@ fn workshop_main(gui: GuiController) {
                  [false, true, false],
                  [false, true, false]]);
     while gui.show_grid(&mut board) {
+        board.next_generation();
     }
 }
 

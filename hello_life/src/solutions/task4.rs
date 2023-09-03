@@ -1,104 +1,82 @@
-use gui::{Grid, GuiController};
+#[allow(unused_imports)]
+use gui::{Grid, Resizable, GuiController};
 
-// Task 4: Define a method that creates a new generation from the current one
-//         Check a few generations of a 3-by-3 grid and display each of them using
-//         the show_grid method on the gui
-//         The function signature is: fn show_grid(state: &[Vec<bool>])
-//         (&[Vec<bool>] can be borrowed from a Vec<Vec<bool>>)
-//         It blocks until the Continue button is pressed
-//         It returns false if the gui has been closed, true otherwise
+// Task 4: Implement the Grid trait for your struct. The trait is defined as:
+//
+//          pub trait Grid {
+//              fn get(&self, x: usize, y: usize) -> bool;
+//              fn set(&mut self, x: usize, y: usize, value: bool);
+//              fn get_height(&self) -> usize;
+//              fn get_width(&self) -> usize;
+//          }
+//
+//         At the moment we have a static 3x3 grid, so get_height an get_width should
+//         just return 3.
+//         get should return the value at the given position. set should update it.
+//
+//         Note: get and set will only be called with x and y values smaller than what
+//               is returned by get_width and get_height respectively, but to be sure
+//               you should add a boundry check before indexing into your array.
+//
+//         Once the grid implements these methods, we can use the show_grid method on gui.
+//         We can call it with a mut reference to our struct (e.g. gui.show_grid(&mut grid))
+//         The show_grid function blocks until the gui requests a state update, or the
+//         Window is closed.
+//         It returns a bool:
+//          * true indicates that the GUI Window is still open and requests the state to
+//            be updated.
+//          * false indicates that the GUI Window has been closed
+//
+//         Note that you can now press cells in the GUI to flip their state.
+//         If set has been implemented correctly, this change should be reflected
+//         in your struct.
+//         At this point, pressing step should not change what is displayed. If it does,
+//         either set or get might be implemented incorrectly.
+//         (The program will terminate if an update is requested after workshop_main has
+//         returned. You can use a while loop based on the return value of show_grid, if
+//         you want it to keep running until the window is closed)
 
-struct LifeGeneration {
-    state: Vec<Vec<bool>>,
-    width: usize,
-    height: usize,
+struct Board {
+    state: [[bool; 3]; 3],
 }
 
-impl LifeGeneration {
-    fn new(slice: &[&[bool]]) -> Self {
-        let mut state: Vec<Vec<bool>> = Vec::new();
-        let height = slice.len();
-        let mut width = 0;
-        for row in slice {
-            state.push(Vec::from(*row));
-            width = if width > row.len() {
-                width
-            } else {
-                row.len()
-            }
-        }
-        LifeGeneration {
-            state,
-            width,
-            height
-        }
+impl Board {
+    fn new() -> Self {
+        Self { state: [[false; 3]; 3] }
     }
 
-    fn current_at(&self, x: isize, y: isize) -> bool {
-        if x < 0 || y < 0 {
-            false
-        } else {
-            self.get(x as usize, y as usize)
-        }
-    }
-
-    fn next_at(&self, x: usize, y: usize) -> bool {
-        let x = x as isize;
-        let y = y as isize;
-        let live_neighbours =
-            self.current_at(x-1, y-1) as u32 +
-            self.current_at(x-1, y) as u32+
-            self.current_at(x-1, y+1) as u32+
-            self.current_at(x, y-1) as u32+
-            self.current_at(x, y+1) as u32+
-            self.current_at(x+1, y-1) as u32+
-            self.current_at(x+1, y) as u32+
-            self.current_at(x+1, y+1) as u32;
-
-        live_neighbours == 3 || (live_neighbours == 2 && self.current_at(x, y))
-    }
-
-    fn next_generation(&self) -> LifeGeneration {
-        let mut state: Vec<Vec<bool>> = Vec::new();
-        let height = self.height;
-        let width = self.width;
-
-        for y in 0..height {
-            state.push(Vec::new());
-            for x in 0..width {
-                state[y].push(self.next_at(x, y));
-            }
-        }
-        Self { state, width, height }
+    fn from(state: [[bool; 3]; 3]) -> Self {
+        Self { state }
     }
 }
 
-impl Grid for LifeGeneration {
+impl Grid for Board {
     fn get(&self, x: usize, y: usize) -> bool {
-        match &self.state.get(y) {
-            Some(v) => *v.get(x).unwrap_or(&false),
-            None => false,
+        if y < self.state.len() && x < self.state[y].len() {
+            self.state[y][x]
+        } else {
+            false
         }
     }
     fn set(&mut self, x: usize, y: usize, value: bool) {
-        if y < self.height && x < self.state[y].len() {
-                self.state[y][x] = value;
+        if y < self.state.len() && x < self.state[y].len() {
+            self.state[y][x] = value;
         }
     }
     fn get_height(&self) -> usize {
-        self.height
+        3
     }
     fn get_width(&self) -> usize {
-        self.width
+        3
     }
 }
 
-fn workshop_main(mut gui: GuiController) {
-    let mut state = LifeGeneration::new(&[&[false, true, false],
-                      &[false, true, false],
-                      &[false, true, false]]);
-    while gui.show_grid(&state) {
-        state = state.next_generation();
+fn workshop_main(gui: GuiController) {
+    let mut board = Board::from(
+                [[false, true, false],
+                 [false, true, false],
+                 [false, true, false]]);
+    while gui.show_grid(&mut board) {
     }
 }
 

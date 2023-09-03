@@ -1,28 +1,12 @@
 #[allow(unused_imports)]
 use gui::{Grid, Resizable, GuiController};
 
-// Task 5: The get method is defined by the trait to take two usize parameters and
-//         return a bool.
-//         It can be beneficial for the rule calculation to have an additional method
-//         that takes signed x and y and an integer return type.
-//
-//         Implement a current_at method that takes two values x and y of type isize
-//         and return the current state of the cell at the given position in the grid as
-//         either 1 or 0, instead of true or false.
-//
-//         Implement a next_at method that takes two values x and y of type isize and
-//         returns a bool based on whether the cell will be live or dead in the next
-//         generation, according to the rules of the Game of Life.
-//         This function should use current_at to get values of the neighboorhood.
-//
-//         Hints:
-//         * Remember anything outside the grid should return 0.
-//         * When indexing arrays we need to use a usize typed value. We can cast the
-//           isize values to usize using "as" once we have checked that they are not
-//           negative.
-//         * Casting bool to an integer type (e.g. u32) will yield 1 for true and 0
-//           for false.
+// Task 7: Add a unit test for your next_generation method.
+//         The assert_eq and assert_ne macros require a type to implement
+//         both PartialEq and Debug. You can use the derive annotation on
+//         your struct to implement them automatically
 
+#[derive(PartialEq, Debug)]
 struct Board {
     state: [[bool; 3]; 3],
 }
@@ -58,6 +42,16 @@ impl Board {
             + self.current_at(x + 1, y + 1);
         live_neighbors == 3 || (live_neighbors == 2 && self.get(x as usize, y as usize))
     }
+
+    fn next_generation(&mut self) {
+        let mut new_state = Self::new();
+        for y in 0..self.state.len() {
+            for x in 0..self.state[y].len() {
+                new_state.set(x, y, self.next_at(x as isize, y as isize));
+            }
+        }
+        *self = new_state;
+    }
 }
 
 impl Grid for Board {
@@ -87,9 +81,25 @@ fn workshop_main(gui: GuiController) {
                  [false, true, false],
                  [false, true, false]]);
     while gui.show_grid(&mut board) {
+        board.next_generation();
     }
 }
 
 fn main() {
     gui::show_grid_with_callback(workshop_main).unwrap();
+}
+
+#[test]
+fn test_next_generation() {
+    let mut grid = Board::from(
+               [[false, true, false],
+                [false, true, false],
+                [false, true, false]]);
+    let should_be = Board::from(
+               [[false, false, false],
+                [true , true , true ],
+                [false, false, false]]);
+    assert_ne!(grid, should_be);
+    grid.next_generation();
+    assert_eq!(grid, should_be);
 }
