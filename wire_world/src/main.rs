@@ -12,18 +12,18 @@ impl State {
     fn to_usize(self) -> usize {
         match self {
             State::Empty => 0,
-            State::Head => 1,
-            State::Tail => 2,
-            State::Wire => 3,
+            State::Wire => 1,
+            State::Head => 2,
+            State::Tail => 3,
         }
     }
 
     fn from_usize(u: usize) -> Self {
         match u {
             0 => State::Empty,
-            1 => State::Head,
-            2 => State::Tail,
-            3 => State::Wire,
+            1 => State::Wire,
+            2 => State::Head,
+            3 => State::Tail,
             _ => unreachable!(),
         }
     }
