@@ -1,6 +1,7 @@
 use crate::{Grid, Resizable, MultiGrid};
+use serde::{Deserialize, Serialize};
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Serialize, Deserialize)]
 pub struct Board {
     pub width: usize,
     pub height: usize,
